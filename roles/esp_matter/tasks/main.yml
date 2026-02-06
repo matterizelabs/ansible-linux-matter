@@ -1,0 +1,34 @@
+---
+- name: Clone ESP-Matter
+  ansible.builtin.git:
+    repo: "{{ esp_matter_repo }}"
+    dest: "{{ esp_install_dir_expanded }}/esp-matter"
+    version: "{{ esp_matter_ref }}"
+    depth: 1
+
+- name: Initialize ESP-Matter submodules
+  ansible.builtin.shell: |
+    set -euo pipefail
+    git submodule update --init --depth 1
+  args:
+    chdir: "{{ esp_install_dir_expanded }}/esp-matter"
+    executable: /bin/bash
+
+- name: Checkout connectedhomeip submodules
+  ansible.builtin.shell: |
+    set -euo pipefail
+    ./scripts/checkout_submodules.py --platform esp32 linux --shallow
+  args:
+    chdir: "{{ esp_install_dir_expanded }}/esp-matter/connectedhomeip/connectedhomeip"
+    executable: /bin/bash
+
+- name: Install ESP-Matter
+  ansible.builtin.shell: |
+    set -euo pipefail
+    . "{{ esp_install_dir_expanded }}/esp-idf/export.sh"
+    ./install.sh
+  args:
+    chdir: "{{ esp_install_dir_expanded }}/esp-matter"
+    executable: /bin/bash
+  environment:
+    IDF_TOOLS_PATH: "{{ idf_tools_path }}"

@@ -1,0 +1,3 @@
+---
+esp_matter_repo: "https://github.com/espressif/esp-matter.git"
+esp_matter_ref: "main"
