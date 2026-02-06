@@ -38,7 +38,7 @@
 
 - name: Build android_building.md URL
   ansible.builtin.set_fact:
-    chip_doc_url: >-
+    android_matter_doc_url: >-
       https://raw.githubusercontent.com/project-chip/connectedhomeip/refs/{{
       'heads' if chip_upstream_doc_ref_mode == 'branch' else 'tags' }}/{{
       chip_doc_ref }}/docs/platforms/android/android_building.md
@@ -46,22 +46,24 @@
 - name: Parse Android dependency versions from connectedhomeip docs
   ansible.builtin.command: >-
     python3 {{ playbook_dir }}/scripts/parse_android_deps.py
-    --url {{ chip_doc_url }}
-  register: android_deps_out
+    --url {{ android_matter_doc_url }}
+  register: android_matter_deps_out
   changed_when: false
   delegate_to: localhost
   run_once: true
 
 - name: Set Android dependency facts
   ansible.builtin.set_fact:
-    android_matter_sdk_api_level: "{{ (android_deps_out.stdout | from_json).android_matter_sdk_api_level }}"
-    android_matter_ndk_version: "{{ (android_deps_out.stdout | from_json).android_matter_ndk_version }}"
+    android_matter_sdk_api_level: "{{ (android_matter_deps_out.stdout | from_json).android_matter_sdk_api_level }}"
+    android_matter_ndk_version: "{{ (android_matter_deps_out.stdout | from_json).android_matter_ndk_version }}"
     android_matter_jdk_version: >-
-      {{ (android_deps_out.stdout | from_json).android_matter_jdk_version | default(android_matter_jdk_version) }}
+      {{ (android_matter_deps_out.stdout | from_json).android_matter_jdk_version
+      | default(android_matter_jdk_version) }}
     android_matter_kotlin_version: >-
-      {{ (android_deps_out.stdout | from_json).android_matter_kotlin_version | default(android_matter_kotlin_version) }}
+      {{ (android_matter_deps_out.stdout | from_json).android_matter_kotlin_version
+      | default(android_matter_kotlin_version) }}
     android_matter_cmdline_tools_version: >-
-      {{ (android_deps_out.stdout | from_json).android_matter_cmdline_tools_version
+      {{ (android_matter_deps_out.stdout | from_json).android_matter_cmdline_tools_version
       | default(android_matter_cmdline_tools_version) }}
   run_once: true
 
@@ -91,7 +93,7 @@
 
 - name: Detect JAVA_HOME for Android builds
   ansible.builtin.command: readlink -f /usr/bin/java
-  register: java_path
+  register: android_matter_java_path
   changed_when: false
   failed_when: false
   when: ansible_facts["system"] == "Linux"
@@ -99,7 +101,7 @@
 - name: Set JAVA_HOME fact
   ansible.builtin.set_fact:
     android_matter_java_home: >-
-      {{ (java_path.stdout | dirname | dirname) if (java_path.rc == 0) else '' }}
+      {{ (android_matter_java_path.stdout | dirname | dirname) if (android_matter_java_path.rc == 0) else '' }}
   when: ansible_facts["system"] == "Linux"
 
 - name: Detect sdkmanager
@@ -108,14 +110,15 @@
   loop:
     - "{{ android_matter_sdk_root }}/cmdline-tools/latest/bin/sdkmanager"
     - "{{ android_matter_sdk_root }}/cmdline-tools/{{ android_matter_cmdline_tools_version }}/bin/sdkmanager"
-  register: sdkmanager_stats
+  register: android_matter_sdkmanager_stats
   when: ansible_facts["system"] == "Linux"
 
 - name: Select sdkmanager path
   ansible.builtin.set_fact:
-    android_sdkmanager_path: >-
-      {{ (sdkmanager_stats.results | selectattr('stat.exists') | map(attribute='item') | first) | default('') }}
-  when: ansible_system == "Linux"
+    android_matter_sdkmanager_path: >-
+      {{ (android_matter_sdkmanager_stats.results | selectattr('stat.exists') | map(attribute='item') | first)
+      | default('') }}
+  when: ansible_facts["system"] == "Linux"
 
 - name: Fail if sdkmanager is missing
   ansible.builtin.fail:
@@ -123,13 +126,13 @@
       Android SDK Command Line Tools are required but were not found.
       Install Android Studio and the SDK Command Line Tools ({{ android_matter_cmdline_tools_version }})
       in {{ android_matter_sdk_root }}, then rerun this playbook.
-  when: ansible_facts["system"] == "Linux" and (android_sdkmanager_path | length == 0)
+  when: ansible_facts["system"] == "Linux" and (android_matter_sdkmanager_path | length == 0)
 
 - name: Install Android SDK and NDK packages
   ansible.builtin.shell: |
     set -euo pipefail
-    yes | "{{ android_sdkmanager_path }}" --licenses
-    "{{ android_sdkmanager_path }}" --install \
+    yes | "{{ android_matter_sdkmanager_path }}" --licenses
+    "{{ android_matter_sdkmanager_path }}" --install \
       "platforms;android-{{ android_matter_sdk_api_level }}" "ndk;{{ android_matter_ndk_version }}"
   args:
     executable: /bin/bash
