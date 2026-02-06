@@ -19,7 +19,7 @@
       - dfu-util
       - libusb-1.0-0
     state: present
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Install host packages (RedHat/CentOS/Fedora)
   become: true
@@ -37,7 +37,7 @@
       - dfu-util
       - libusbx
     state: present
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts["os_family"] == "RedHat"
 
 - name: Install host packages (Arch)
   become: true
@@ -57,12 +57,25 @@
       - libusb
       - python-pip
     state: present
-  when: ansible_os_family == "Archlinux"
+  when: ansible_facts["os_family"] == "Archlinux"
 
 - name: Fail on unsupported distro
   ansible.builtin.fail:
     msg: "Unsupported distro for automatic dependencies. Please install ESP-IDF prerequisites manually and rerun."
-  when: ansible_os_family not in ["Debian", "RedHat", "Archlinux"]
+  when: ansible_facts["os_family"] not in ["Debian", "RedHat", "Archlinux"]
+
+- name: Ensure install directory fact is set
+  ansible.builtin.set_fact:
+    esp_install_dir_expanded: >-
+      {% set base = esp_install_dir | default('~/.esp') %}
+      {% if base == '~' %}
+      {{ ansible_facts['env']['HOME'] }}
+      {% elif base.startswith('~/') %}
+      {{ ansible_facts['env']['HOME'] ~ base[1:] }}
+      {% else %}
+      {{ base }}
+      {% endif %}
+  when: esp_install_dir_expanded is not defined
 
 - name: Ensure install directory exists
   ansible.builtin.file:
@@ -86,3 +99,4 @@
     executable: /bin/bash
   environment:
     IDF_TOOLS_PATH: "{{ esp_idf_tools_path }}"
+  when: not ansible_check_mode

@@ -6,7 +6,7 @@
       - unzip
       - openjdk-17-jdk
     state: present
-  when: ansible_os_family == "Debian"
+  when: ansible_facts["os_family"] == "Debian"
 
 - name: Install Android build packages (RedHat/CentOS/Fedora)
   become: true
@@ -15,7 +15,7 @@
       - unzip
       - java-17-openjdk-devel
     state: present
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts["os_family"] == "RedHat"
 
 - name: Install Android build packages (Arch)
   become: true
@@ -24,12 +24,12 @@
       - unzip
       - jdk17-openjdk
     state: present
-  when: ansible_os_family == "Archlinux"
+  when: ansible_facts["os_family"] == "Archlinux"
 
 - name: Fail on unsupported distro for Android packages
   ansible.builtin.fail:
     msg: "Unsupported distro for Android build dependencies. Please install JDK 17 and unzip manually."
-  when: ansible_os_family not in ["Debian", "RedHat", "Archlinux"]
+  when: ansible_facts["os_family"] not in ["Debian", "RedHat", "Archlinux"]
 
 - name: Install Kotlin compiler
   become: true
@@ -46,20 +46,20 @@
   args:
     executable: /bin/bash
     creates: "{{ android_matter_kotlin_install_dir }}/bin/kotlinc"
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Detect JAVA_HOME for Android builds
   ansible.builtin.command: readlink -f /usr/bin/java
   register: java_path
   changed_when: false
   failed_when: false
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Set JAVA_HOME fact
   ansible.builtin.set_fact:
     android_matter_java_home: >-
       {{ (java_path.stdout | dirname | dirname) if (java_path.rc == 0) else '' }}
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Detect sdkmanager
   ansible.builtin.stat:
@@ -68,7 +68,7 @@
     - "{{ android_matter_sdk_root }}/cmdline-tools/latest/bin/sdkmanager"
     - "{{ android_matter_sdk_root }}/cmdline-tools/{{ android_matter_cmdline_tools_version }}/bin/sdkmanager"
   register: sdkmanager_stats
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Select sdkmanager path
   ansible.builtin.set_fact:
@@ -82,7 +82,7 @@
       Android SDK Command Line Tools are required but were not found.
       Install Android Studio and the SDK Command Line Tools ({{ android_matter_cmdline_tools_version }})
       in {{ android_matter_sdk_root }}, then rerun this playbook.
-  when: ansible_system == "Linux" and (android_sdkmanager_path | length == 0)
+  when: ansible_facts["system"] == "Linux" and (android_sdkmanager_path | length == 0)
 
 - name: Install Android SDK and NDK packages
   ansible.builtin.shell: |
@@ -94,7 +94,7 @@
     executable: /bin/bash
   environment:
     ANDROID_HOME: "{{ android_matter_sdk_root }}"
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Write Android environment helper
   ansible.builtin.copy:
@@ -109,4 +109,4 @@
       {% if android_matter_java_home | length > 0 %}
       export JAVA_HOME="{{ android_matter_java_home }}"
       {% endif %}
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
