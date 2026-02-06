@@ -2,7 +2,7 @@
 - name: Assert supported distro family
   ansible.builtin.assert:
     that:
-      - ansible_os_family in ["Debian", "RedHat", "Archlinux"]
+      - ansible_facts["os_family"] in ["Debian", "RedHat", "Archlinux"]
     fail_msg: "Unsupported distro for automatic dependencies. Please install prerequisites manually and rerun."
 
 - name: Ensure install directory exists
@@ -63,7 +63,7 @@
 - name: Assert sufficient memory
   ansible.builtin.assert:
     that:
-      - ansible_facts.memtotal_mb >= preflight_min_mem_mb
+      - ansible_facts["memtotal_mb"] >= preflight_min_mem_mb
     fail_msg: >-
       Not enough memory. Required: {{ preflight_min_mem_mb }} MB,
       available: {{ ansible_facts.memtotal_mb }} MB.

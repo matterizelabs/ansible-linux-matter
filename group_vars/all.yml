@@ -5,7 +5,7 @@ esp_idf_targets:
   - "esp32"
 esp_matter_repo: "https://github.com/espressif/esp-matter.git"
 esp_matter_ref: "main"
-esp_idf_tools_path: "{{ ansible_env.HOME }}/.espressif"
+esp_idf_tools_path: "{{ ansible_facts['env']['HOME'] }}/.espressif"
 
 android_matter_setup_enabled: true
 android_matter_sdk_root: "{{ ansible_env.HOME }}/Android/Sdk"

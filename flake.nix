@@ -15,6 +15,11 @@
       in
       {
         devShells.default = pkgs.mkShell {
+          shellHook = ''
+            export LANG=C.UTF-8
+            export LC_ALL=C.UTF-8
+            export ANSIBLE_SSH_ARGS='-o ServerAliveInterval=30'
+          '';
           packages =
             (with pkgs; [
               ansible

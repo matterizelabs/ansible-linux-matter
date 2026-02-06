@@ -12,11 +12,24 @@
   pre_tasks:
     - name: Expand install directory
       ansible.builtin.set_fact:
-        esp_install_dir_expanded: "{{ esp_install_dir | expanduser }}"
+        esp_install_dir_expanded: >-
+          {% set base = esp_install_dir | default('~/.esp') %}
+          {% if base == '~' %}
+          {{ ansible_facts['env']['HOME'] }}
+          {% elif base.startswith('~/') %}
+          {{ ansible_facts['env']['HOME'] ~ base[1:] }}
+          {% else %}
+          {{ base }}
+          {% endif %}
+      tags: ["always"]
 
   roles:
     - role: preflight
+      tags: ["preflight"]
     - role: esp_idf
+      tags: ["esp_idf"]
     - role: esp_matter
+      tags: ["esp_matter"]
     - role: android_matter
+      tags: ["android_matter"]
       when: android_matter_setup_enabled | bool
