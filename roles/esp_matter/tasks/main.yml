@@ -13,6 +13,7 @@
   args:
     chdir: "{{ esp_install_dir_expanded }}/esp-matter"
     executable: /bin/bash
+  when: not ansible_check_mode
 
 - name: Checkout connectedhomeip submodules
   ansible.builtin.shell: |
@@ -22,6 +23,7 @@
   args:
     chdir: "{{ esp_install_dir_expanded }}/esp-matter/connectedhomeip/connectedhomeip"
     executable: /bin/bash
+  when: not ansible_check_mode
 
 - name: Install ESP-Matter
   ansible.builtin.shell: |
@@ -33,3 +35,4 @@
     executable: /bin/bash
   environment:
     IDF_TOOLS_PATH: "{{ esp_idf_tools_path }}"
+  when: not ansible_check_mode
