@@ -11,14 +11,14 @@
       https://api.github.com/repos/project-chip/connectedhomeip/{{
       'branches' if chip_upstream_doc_ref_mode == 'branch' else 'tags' }}?per_page=100
     return_content: true
-  register: chip_ref_list
+  register: chip_upstream_ref_list
   when: chip_doc_ref is not defined
 
 - name: Fail if chip_doc_ref not provided
   ansible.builtin.fail:
     msg: >-
       chip_doc_ref is required. Available {{ chip_upstream_doc_ref_mode }}s:
-      {{ (chip_ref_list.json | map(attribute='name') | list) | join(', ') }}
+      {{ (chip_upstream_ref_list.json | map(attribute='name') | list) | join(', ') }}
       Example: -e chip_doc_ref=<ref>
   when: chip_doc_ref is not defined
 

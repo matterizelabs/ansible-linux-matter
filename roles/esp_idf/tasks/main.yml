@@ -19,7 +19,9 @@
       - dfu-util
       - libusb-1.0-0
     state: present
-  when: ansible_facts["os_family"] == "Debian"
+  when:
+    - ansible_facts["system"] == "Linux"
+    - ansible_facts["os_family"] == "Debian"
 
 - name: Install host packages (RedHat/CentOS/Fedora)
   become: true
@@ -37,7 +39,9 @@
       - dfu-util
       - libusbx
     state: present
-  when: ansible_facts["os_family"] == "RedHat"
+  when:
+    - ansible_facts["system"] == "Linux"
+    - ansible_facts["os_family"] == "RedHat"
 
 - name: Install host packages (Arch)
   become: true
@@ -57,25 +61,23 @@
       - libusb
       - python-pip
     state: present
-  when: ansible_facts["os_family"] == "Archlinux"
+  when:
+    - ansible_facts["system"] == "Linux"
+    - ansible_facts["os_family"] == "Archlinux"
 
 - name: Fail on unsupported distro
   ansible.builtin.fail:
     msg: "Unsupported distro for automatic dependencies. Please install ESP-IDF prerequisites manually and rerun."
-  when: ansible_facts["os_family"] not in ["Debian", "RedHat", "Archlinux"]
-
-- name: Ensure install directory fact is set
-  ansible.builtin.set_fact:
-    esp_install_dir_expanded: "{{ (ansible_facts['env']['HOME'] if base == '~' else (ansible_facts['env']['HOME'] ~ base[1:]) if base.startswith('~/') else base) }}"
-  when: esp_install_dir_expanded is not defined
-  vars:
-    base: "{{ esp_install_dir | default('~/.esp') }}"
+  when:
+    - ansible_facts["system"] == "Linux"
+    - ansible_facts["os_family"] not in ["Debian", "RedHat", "Archlinux"]
 
 - name: Ensure install directory exists
   ansible.builtin.file:
     path: "{{ esp_install_dir_expanded }}"
     state: directory
     mode: "0755"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Clone ESP-IDF
   ansible.builtin.git:
@@ -83,6 +85,7 @@
     dest: "{{ esp_install_dir_expanded }}/esp-idf"
     version: "{{ esp_idf_version }}"
     recursive: true
+  when: ansible_facts["system"] == "Linux"
 
 - name: Install ESP-IDF tools
   ansible.builtin.shell: |
@@ -93,4 +96,6 @@
     executable: /bin/bash
   environment:
     IDF_TOOLS_PATH: "{{ esp_idf_tools_path }}"
-  when: not ansible_check_mode
+  when:
+    - ansible_facts["system"] == "Linux"
+    - not ansible_check_mode
